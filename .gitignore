@@ -1,0 +1,32 @@
+# ── Python (backend) ──
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+
+# ── Node / Vite (frontend) ──
+node_modules/
+dist/
+dist-ssr/
+*.local
+
+# ── Rust / Tauri (Phase 6) ──
+src-tauri/target/
+src-tauri/binaries/
+backend/vendor/ffmpeg.exe
+backend/vendor/ffprobe.exe
+
+# ── App data / build artifacts ──
+*.db
+*.db-journal
+*.sqlite
+build/
+
+# ── Env / editor / OS ──
+.env
+.DS_Store
+.idea/
+.vscode/

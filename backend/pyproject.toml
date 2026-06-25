@@ -1,0 +1,42 @@
+[build-system]
+requires = ["setuptools>=77.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "cratedig-desktop-backend"
+version = "0.1.0"
+description = "Local FastAPI backend bridging the cratedig-desktop UI to the cratedig engine + SQLite. See ../DESIGN.md."
+requires-python = ">=3.10"
+license = "GPL-3.0-or-later"
+authors = [{ name = "Prodromos Chrysostomou" }]
+
+dependencies = [
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.30",
+    "sqlmodel>=0.0.22",
+    # The download + tag engine — imported UNCHANGED (DESIGN.md §3). Git dependency
+    # until cratedig is published to PyPI, at which point this becomes "cratedig>=0.1.0".
+    "cratedig @ git+https://github.com/pchrysostomou/cratedig.git@v0.1.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "httpx", # transport for FastAPI's TestClient
+    "ruff",
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["app*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra"
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "W"]

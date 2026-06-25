@@ -1,13 +1,16 @@
 """SQLite via SQLModel. See DESIGN.md §6.
 
-Phase 0 creates the database file + engine; the table models land in Phase 1, so
-``init_db`` simply ensures the data directory and DB file exist and the connection
-works. ``SQLModel.metadata.create_all`` is a no-op until models are registered.
+Owns the engine, schema creation, and the per-request session dependency. The
+SQLite ``foreign_keys`` pragma is enabled per connection so the ``ON DELETE
+CASCADE`` relationships in app/models.py are actually enforced.
 """
 
 from __future__ import annotations
 
-from sqlmodel import SQLModel, create_engine
+from collections.abc import Iterator
+
+from sqlalchemy import event
+from sqlmodel import Session, SQLModel, create_engine
 
 from app.config import settings
 
@@ -19,7 +22,23 @@ engine = create_engine(
 )
 
 
+@event.listens_for(engine, "connect")
+def _enable_sqlite_foreign_keys(dbapi_connection, _record) -> None:
+    # SQLite enforces ON DELETE CASCADE only when this pragma is set per connection.
+    cursor = dbapi_connection.cursor()
+    cursor.execute("PRAGMA foreign_keys=ON")
+    cursor.close()
+
+
 def init_db() -> None:
-    """Create the data dir, the DB file, and any registered tables (none yet in Phase 0)."""
+    """Create the data dir, the DB file, and all tables (DESIGN.md §6)."""
     settings.data_dir.mkdir(parents=True, exist_ok=True)
+    from app import models  # noqa: F401  — import registers tables on SQLModel.metadata
+
     SQLModel.metadata.create_all(engine)
+
+
+def get_session() -> Iterator[Session]:
+    """FastAPI dependency yielding a request-scoped database session."""
+    with Session(engine) as session:
+        yield session

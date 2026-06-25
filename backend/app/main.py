@@ -14,7 +14,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app import __version__
 from app.db import init_db
-from app.routers import health
+from app.routers import health, library
 
 
 @asynccontextmanager
@@ -40,3 +40,4 @@ app.add_middleware(
 )
 
 app.include_router(health.router)
+app.include_router(library.router)

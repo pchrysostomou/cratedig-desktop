@@ -45,3 +45,13 @@ def get_track(
         is_favorite=track.id in favorites,
         playlist_ids=repo.playlist_ids_for(session, track.id),
     )
+
+
+@router.delete("/tracks/{track_id}", status_code=204)
+def delete_track(
+    track_id: int,
+    session: Annotated[Session, Depends(get_session)],
+    delete_file: bool = False,
+) -> None:
+    if not repo.delete_track(session, track_id, delete_file):
+        raise HTTPException(status_code=404, detail="Track not found")

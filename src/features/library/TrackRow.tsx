@@ -1,7 +1,7 @@
 import type { Track } from "../../types";
 import { formatDuration } from "../../lib/format";
 import { HeartButton } from "../../components/HeartButton";
-import { AddToPlaylistMenu } from "../playlists/AddToPlaylistMenu";
+import { TrackOverflowMenu } from "./TrackOverflowMenu";
 
 export function TrackRow({
   track,
@@ -44,7 +44,7 @@ export function TrackRow({
       <span className="cell cell-duration num">{formatDuration(track.duration_ms)}</span>
       <span className="cell cell-actions">
         <HeartButton trackId={track.id} isFavorite={track.is_favorite} />
-        <AddToPlaylistMenu trackId={track.id} />
+        <TrackOverflowMenu trackId={track.id} title={track.title} />
       </span>
     </div>
   );

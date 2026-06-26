@@ -65,6 +65,10 @@ export function getTrack(id: number): Promise<TrackDetail> {
   return request<TrackDetail>(`/tracks/${id}`);
 }
 
+export function deleteTrack(id: number, deleteFile: boolean): Promise<void> {
+  return request<void>(`/tracks/${id}?delete_file=${deleteFile}`, jsonInit("DELETE"));
+}
+
 export function streamUrl(id: number): string {
   return `${BASE_URL}/stream/${id}`;
 }

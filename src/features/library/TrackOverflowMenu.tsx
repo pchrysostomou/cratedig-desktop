@@ -1,16 +1,25 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { useAddTrackToPlaylist, usePlaylists } from "./queries";
+import { useAddTrackToPlaylist, usePlaylists } from "../playlists/queries";
+import { DeleteTrackDialog } from "./DeleteTrackDialog";
 
 const MENU_WIDTH = 200;
 
-// "⋯" overflow menu (Add to playlist). The menu is portaled to document.body with
-// fixed coordinates from the trigger's rect, so it escapes the virtualized library
-// scroller and never clips at the bottom edge. Closes on Escape (focus returns to
-// the trigger), outside-click, and scroll/resize.
-export function AddToPlaylistMenu({ trackId }: { trackId: number }) {
+// The per-row "⋯" overflow menu: add-to-playlist + delete-from-library. The menu is
+// portaled to <body> with fixed coordinates so it escapes the virtualized scroller
+// and never clips. Closes on Escape (focus returns to trigger), outside-click, scroll.
+export function TrackOverflowMenu({
+  trackId,
+  title,
+  onDeleted,
+}: {
+  trackId: number;
+  title: string;
+  onDeleted?: () => void;
+}) {
   const [open, setOpen] = useState(false);
   const [pos, setPos] = useState<{ top: number; left: number } | null>(null);
+  const [deleteOpen, setDeleteOpen] = useState(false);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const { data: playlists } = usePlaylists();
@@ -23,9 +32,7 @@ export function AddToPlaylistMenu({ trackId }: { trackId: number }) {
 
   const openMenu = () => {
     const rect = triggerRef.current?.getBoundingClientRect();
-    if (rect) {
-      setPos({ top: rect.bottom + 4, left: Math.max(8, rect.right - MENU_WIDTH) });
-    }
+    if (rect) setPos({ top: rect.bottom + 4, left: Math.max(8, rect.right - MENU_WIDTH) });
     setOpen(true);
   };
 
@@ -42,7 +49,7 @@ export function AddToPlaylistMenu({ trackId }: { trackId: number }) {
     const onScrollOrResize = () => setOpen(false);
     document.addEventListener("mousedown", onPointerDown);
     document.addEventListener("keydown", onKeyDown);
-    window.addEventListener("scroll", onScrollOrResize, true); // capture: any scroller
+    window.addEventListener("scroll", onScrollOrResize, true);
     window.addEventListener("resize", onScrollOrResize);
     return () => {
       document.removeEventListener("mousedown", onPointerDown);
@@ -81,6 +88,18 @@ export function AddToPlaylistMenu({ trackId }: { trackId: number }) {
             ) : (
               <div className="overflow-empty">No playlists yet</div>
             )}
+            <div className="overflow-divider" />
+            <button
+              type="button"
+              role="menuitem"
+              className="overflow-item danger-item"
+              onClick={() => {
+                setOpen(false);
+                setDeleteOpen(true);
+              }}
+            >
+              Delete from library
+            </button>
           </div>,
           document.body,
         )
@@ -104,6 +123,13 @@ export function AddToPlaylistMenu({ trackId }: { trackId: number }) {
         ⋯
       </button>
       {menu}
+      <DeleteTrackDialog
+        trackId={trackId}
+        title={title}
+        open={deleteOpen}
+        onClose={() => setDeleteOpen(false)}
+        onDeleted={onDeleted}
+      />
     </span>
   );
 }

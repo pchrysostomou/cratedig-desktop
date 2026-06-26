@@ -18,6 +18,10 @@ src-tauri/target/
 src-tauri/binaries/
 backend/vendor/ffmpeg.exe
 backend/vendor/ffprobe.exe
+# stray install/build artifacts that can land at the repo root
+/app.exe
+/uninstall.exe
+/cratedig-sidecar/
 
 # ── App data / build artifacts ──
 *.db

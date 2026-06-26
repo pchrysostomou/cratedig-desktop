@@ -86,6 +86,16 @@ flowchart LR
 - **Native + self-contained** — installs and runs as a desktop app; the backend auto-starts as a
   bundled sidecar (no Python or terminal required for end users).
 
+## Requirements
+
+- **Windows 10/11** — the installer is Windows-only for now.
+- **FFmpeg** — needed only for *downloading* tracks. The app uses a **system FFmpeg** if one is on
+  your `PATH`. If a download fails with an FFmpeg error, install it and restart the app:
+  - `winget install Gyan.FFmpeg`, or download from [ffmpeg.org](https://ffmpeg.org/download.html).
+  - Playing tracks you already have does **not** need FFmpeg.
+
+> FFmpeg is **not bundled** with the installer yet — that's a planned improvement.
+
 ## Development
 
 Requires **Python 3.10+**, **Node 18+**, and — for the native shell — the **Rust** toolchain
@@ -100,8 +110,8 @@ uvicorn app.main:app --port 8008 # → http://127.0.0.1:8008/health
 pytest                           # run the backend tests
 ```
 
-> FFmpeg is required by the engine for downloads. The app uses a **system FFmpeg** if present and
-> falls back to a bundled copy in packaged builds.
+> FFmpeg is required by the engine for downloads — install a **system FFmpeg** (it is **not bundled**
+> with the installer yet); see [Requirements](#requirements).
 
 ### Frontend (React + Vite)
 

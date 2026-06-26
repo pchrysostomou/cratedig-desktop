@@ -5,7 +5,10 @@
   --bg-elev: #181818;
   --text: #e8e8e8;
   --text-dim: #9a9a9a;
-  --accent: #1db954;
+  /* Orange is the app's identity (single shared accent, reused everywhere). */
+  --accent: #f97316;
+  --accent-hover: #fb8c3a;
+  --accent-ink: #2b1400; /* dark text for use on top of --accent */
   --danger: #e04848;
   --border: #2a2a2a;
 }
@@ -24,6 +27,11 @@ body,
 body {
   background: var(--bg);
   color: var(--text);
+}
+
+/* Native range sliders (volume) use the app accent, not the OS accent color. */
+input[type="range"] {
+  accent-color: var(--accent);
 }
 
 .app-shell {
@@ -95,6 +103,26 @@ body {
 }
 
 /* ── Sidebar nav ── */
+.sidebar {
+  display: flex;
+  flex-direction: column;
+}
+
+.add-button {
+  background: var(--accent);
+  color: var(--accent-ink);
+  border: none;
+  border-radius: 20px;
+  padding: 8px 14px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-bottom: 16px;
+}
+
+.add-button:hover {
+  background: var(--accent-hover);
+}
+
 .nav-link {
   display: block;
   color: var(--text-dim);
@@ -103,8 +131,13 @@ body {
 }
 
 .nav-link.active {
-  color: var(--text);
+  color: var(--accent);
   font-weight: 600;
+}
+
+.sidebar-footer {
+  margin-top: auto;
+  padding-top: 16px;
 }
 
 /* ── Main is a flex column so the virtualized table can own its scroll ── */
@@ -116,11 +149,225 @@ body {
 }
 
 .player-bar {
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: 1fr 2fr 1fr;
+  align-items: center;
+  gap: 16px;
 }
 
-.player-placeholder {
+/* ── Now playing ── */
+.now-playing-inner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.np-cover {
+  width: 48px;
+  height: 48px;
+  border-radius: 4px;
+  object-fit: cover;
+  background: var(--bg);
+}
+
+.np-meta {
+  min-width: 0;
+}
+
+.np-title {
+  font-size: 14px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.np-artist {
+  font-size: 12px;
+}
+
+/* ── Transport + progress ── */
+.player-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.transport {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.transport button {
+  background: transparent;
+  border: none;
+  color: var(--text);
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.transport button:disabled {
+  color: var(--border);
+  cursor: default;
+}
+
+.transport .play-pause {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--text);
+  color: var(--bg);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.transport .play-pause:disabled {
+  background: var(--border);
+  color: var(--text-dim);
+}
+
+.progress {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  max-width: 540px;
+}
+
+.progress .time {
+  font-size: 11px;
+  color: var(--text-dim);
+  font-variant-numeric: tabular-nums;
+  width: 38px;
+  text-align: center;
+}
+
+.progress-bar {
+  position: relative;
+  flex: 1;
+  height: 4px;
+  background: var(--border);
+  border-radius: 2px;
+  cursor: pointer;
+}
+
+.progress-fill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  width: 0;
+  background: var(--accent);
+  border-radius: 2px;
+}
+
+.progress-thumb {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--text);
+  transform: translate(-50%, -50%);
+}
+
+/* ── Volume ── */
+.player-right {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.volume {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.volume button {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+/* ── Modal / DownloadDialog ── */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+}
+
+.modal {
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 24px;
+  width: 440px;
+  max-width: 90vw;
+}
+
+.modal h2 {
+  margin-top: 0;
+}
+
+.download-input {
+  width: 100%;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  padding: 10px 12px;
+  font-size: 14px;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.modal-actions button {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  padding: 8px 14px;
+  cursor: pointer;
+}
+
+.modal-actions button[type="submit"] {
+  background: var(--accent);
+  color: var(--accent-ink);
+  border: none;
+  font-weight: 600;
+}
+
+.modal-actions button[type="submit"]:hover:not(:disabled) {
+  background: var(--accent-hover);
+}
+
+.modal-actions button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.job-status {
+  margin-top: 14px;
   font-size: 13px;
+  color: var(--text-dim);
+}
+
+.job-status .ok {
+  color: var(--accent);
 }
 
 /* ── Library view ── */
@@ -183,11 +430,34 @@ body {
 
 .track-row {
   display: grid;
-  grid-template-columns: 3fr 2fr 2fr 80px;
+  grid-template-columns: 36px 3fr 2fr 2fr 80px;
   gap: 12px;
   padding: 10px 12px;
   border-bottom: 1px solid var(--border);
   align-items: center;
+}
+
+.cell-play {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.row-play {
+  background: transparent;
+  border: none;
+  color: var(--text-dim);
+  cursor: pointer;
+  font-size: 12px;
+  opacity: 0;
+}
+
+.track-row:hover .row-play {
+  opacity: 1;
+}
+
+.row-play:hover {
+  color: var(--text);
 }
 
 .track-head {

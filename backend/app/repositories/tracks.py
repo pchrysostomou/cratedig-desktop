@@ -13,6 +13,7 @@ from cratedig.models import DownloadResult, ResultStatus
 from sqlalchemy import String, cast, func, or_
 from sqlmodel import Session, select
 
+from app.audio_meta import read_duration_ms
 from app.models import Favorite, PlaylistTrack, Track
 from app.schemas import SortField, SortOrder
 
@@ -101,6 +102,12 @@ def save_download_result(session: Session, result: DownloadResult) -> Track | No
         file_size = None
     ext = os.path.splitext(result.output_path)[1].lstrip(".").lower() or None
 
+    # Backfill duration when the metadata source gave 0 (DESIGN §9 Phase 4): the file
+    # is on local disk now, so read its real length from the header.
+    duration_ms = src.duration_ms
+    if not duration_ms:
+        duration_ms = read_duration_ms(result.output_path) or 0
+
     fields = dict(
         source_id=src.source_id,
         title=src.title,
@@ -108,7 +115,7 @@ def save_download_result(session: Session, result: DownloadResult) -> Track | No
         primary_artist=src.primary_artist,
         album=src.album,
         isrc=src.isrc,
-        duration_ms=src.duration_ms,
+        duration_ms=duration_ms,
         track_number=src.track_number,
         disc_number=src.disc_number,
         release_year=src.release_year,

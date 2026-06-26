@@ -74,3 +74,15 @@ class JobRead(BaseModel):
     results_summary: dict[str, int] | None = None
     created_at: int
     finished_at: int | None = None
+
+
+class HistoryCreate(BaseModel):
+    track_id: int
+    ms_played: int | None = None
+
+
+class HistoryRead(BaseModel):
+    id: int
+    track_id: int
+    played_at: int
+    ms_played: int | None = None

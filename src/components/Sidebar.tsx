@@ -1,4 +1,5 @@
 import { NavLink } from "react-router-dom";
+import { BackendStatus } from "./BackendStatus";
 
 const LINKS = [
   { to: "/", label: "Library", end: true },
@@ -6,10 +7,13 @@ const LINKS = [
   { to: "/favorites", label: "Favorites", end: false },
 ];
 
-export function Sidebar() {
+export function Sidebar({ onAdd }: { onAdd: () => void }) {
   return (
     <aside className="sidebar">
       <h1>cratedig</h1>
+      <button type="button" className="add-button" onClick={onAdd}>
+        + Add music
+      </button>
       <nav>
         {LINKS.map((link) => (
           <NavLink
@@ -22,6 +26,9 @@ export function Sidebar() {
           </NavLink>
         ))}
       </nav>
+      <div className="sidebar-footer">
+        <BackendStatus />
+      </div>
     </aside>
   );
 }

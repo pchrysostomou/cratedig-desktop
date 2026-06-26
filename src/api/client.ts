@@ -1,7 +1,7 @@
 // Typed HTTP client for the FastAPI backend (the "kitchen"). See DESIGN.md §1, §5.
 // In dev the backend runs as `uvicorn app.main:app`; in production it is the
 // Tauri-spawned sidecar. Both bind 127.0.0.1:8008.
-import type { Track, TrackDetail } from "../types";
+import type { Job, Track, TrackDetail } from "../types";
 
 export const BASE_URL = "http://127.0.0.1:8008";
 
@@ -46,4 +46,40 @@ export function getLibrary(params: LibraryParams = {}): Promise<Track[]> {
 
 export function getTrack(id: number): Promise<TrackDetail> {
   return getJson<TrackDetail>(`/tracks/${id}`);
+}
+
+export function streamUrl(id: number): string {
+  return `${BASE_URL}/stream/${id}`;
+}
+
+export function coverUrl(id: number): string {
+  return `${BASE_URL}/cover/${id}`;
+}
+
+export interface DownloadRequest {
+  query: string;
+  format?: string;
+  bitrate?: string;
+  cookies_from_browser?: string;
+  no_lyrics?: boolean;
+}
+
+function postJson<T>(path: string, body: unknown): Promise<T> {
+  return getJson<T>(path, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+}
+
+export function startDownload(req: DownloadRequest): Promise<{ job_id: string }> {
+  return postJson<{ job_id: string }>("/download", req);
+}
+
+export function getJob(id: string): Promise<Job> {
+  return getJson<Job>(`/jobs/${id}`);
+}
+
+export function postHistory(trackId: number): Promise<unknown> {
+  return postJson("/history", { track_id: trackId });
 }

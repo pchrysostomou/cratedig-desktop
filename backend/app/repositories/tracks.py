@@ -6,8 +6,10 @@ Repositories return ORM ``Track`` rows; the router maps them to response schemas
 
 from __future__ import annotations
 
+import os
 from collections.abc import Sequence
 
+from cratedig.models import DownloadResult, ResultStatus
 from sqlalchemy import String, cast, func, or_
 from sqlmodel import Session, select
 
@@ -75,3 +77,55 @@ def playlist_ids_for(session: Session, track_id: int) -> list[int]:
     """Playlists a track belongs to (empty until Phase 5 populates it)."""
     stmt = select(PlaylistTrack.playlist_id).where(PlaylistTrack.track_id == track_id)
     return list(session.exec(stmt).all())
+
+
+def get_by_file_path(session: Session, file_path: str) -> Track | None:
+    return session.exec(select(Track).where(Track.file_path == file_path)).first()
+
+
+def save_download_result(session: Session, result: DownloadResult) -> Track | None:
+    """Upsert a cratedig DownloadResult into the tracks table (idempotent by file_path).
+
+    Only SUCCESS/SKIPPED results with an output_path are persisted; NOT_FOUND/FAILED
+    are ignored. Returns the stored Track, or None if nothing was persisted.
+    """
+    if result.status not in (ResultStatus.SUCCESS, ResultStatus.SKIPPED):
+        return None
+    if not result.output_path:
+        return None
+
+    src = result.track
+    try:
+        file_size: int | None = os.path.getsize(result.output_path)
+    except OSError:
+        file_size = None
+    ext = os.path.splitext(result.output_path)[1].lstrip(".").lower() or None
+
+    fields = dict(
+        source_id=src.source_id,
+        title=src.title,
+        artists=list(src.artists),
+        primary_artist=src.primary_artist,
+        album=src.album,
+        isrc=src.isrc,
+        duration_ms=src.duration_ms,
+        track_number=src.track_number,
+        disc_number=src.disc_number,
+        release_year=src.release_year,
+        cover_art_url=src.cover_art_url,
+        lyrics=src.lyrics,
+        file_path=result.output_path,
+        file_format=ext,
+        file_size=file_size,
+        youtube_url=result.youtube_url,
+    )
+
+    existing = get_by_file_path(session, result.output_path)
+    track = existing or Track(**fields)
+    if existing is not None:  # update in place (preserves id / added_at / play_count)
+        for key, value in fields.items():
+            setattr(track, key, value)
+    session.add(track)
+    session.commit()
+    session.refresh(track)
+    return track

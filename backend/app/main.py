@@ -1,7 +1,7 @@
 """FastAPI application entry. See DESIGN.md §1, §5.
 
 The "kitchen": the only component that touches the cratedig engine and SQLite.
-Phase 0 wires the app, CORS, the DB init, and the health router only.
+Wires the app, CORS, DB init, the download JobManager, and the routers.
 """
 
 from __future__ import annotations
@@ -14,13 +14,19 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app import __version__
 from app.db import init_db
-from app.routers import health, library
+from app.jobs import JobManager
+from app.routers import download, health, library
 
 
 @asynccontextmanager
-async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
+async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     init_db()
-    yield
+    app.state.job_manager = JobManager()
+    await app.state.job_manager.start()
+    try:
+        yield
+    finally:
+        await app.state.job_manager.stop()
 
 
 app = FastAPI(title="cratedig-desktop backend", version=__version__, lifespan=lifespan)
@@ -41,3 +47,4 @@ app.add_middleware(
 
 app.include_router(health.router)
 app.include_router(library.router)
+app.include_router(download.router)

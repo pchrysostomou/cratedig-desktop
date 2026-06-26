@@ -53,3 +53,24 @@ class TrackRead(BaseModel):
 class TrackDetail(TrackRead):
     lyrics: str | None = None
     playlist_ids: list[int] = []
+
+
+class DownloadRequest(BaseModel):
+    query: str  # MusicBrainz URL/MBID or "Artist - Title" (DESIGN §10 Q1)
+    format: str | None = None
+    bitrate: str | None = None
+    cookies_from_browser: str | None = None
+    no_lyrics: bool = False
+
+
+class JobRead(BaseModel):
+    id: str
+    query: str
+    status: str  # queued | running | done | error
+    done: int
+    total: int
+    error: str | None = None
+    track_ids: list[int] = []
+    results_summary: dict[str, int] | None = None
+    created_at: int
+    finished_at: int | None = None

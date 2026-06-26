@@ -25,8 +25,11 @@ engine = create_engine(
 @event.listens_for(engine, "connect")
 def _enable_sqlite_foreign_keys(dbapi_connection, _record) -> None:
     # SQLite enforces ON DELETE CASCADE only when this pragma is set per connection.
+    # busy_timeout lets a brief writer collision (download worker vs request) wait
+    # rather than fail with "database is locked" (DESIGN §5.2 concurrency).
     cursor = dbapi_connection.cursor()
     cursor.execute("PRAGMA foreign_keys=ON")
+    cursor.execute("PRAGMA busy_timeout=5000")
     cursor.close()
 
 

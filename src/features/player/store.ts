@@ -39,6 +39,7 @@ export interface PlayerStore {
   toggleMute: () => void;
   toggleShuffle: () => void;
   cycleRepeat: () => void;
+  handleTrackDeleted: (id: number) => void;
   hydrate: (payload: HydratePayload) => void;
   // engine-fact setters
   _setPlaying: (playing: boolean) => void;
@@ -150,6 +151,27 @@ export const usePlayerStore = create<PlayerStore>((set, get) => ({
     const current = get().repeat;
     const next = REPEAT_CYCLE[(REPEAT_CYCLE.indexOf(current) + 1) % REPEAT_CYCLE.length];
     set({ repeat: next });
+  },
+
+  handleTrackDeleted: (id) => {
+    const s = get();
+    const newQueue = s.queue.filter((trackId) => trackId !== id);
+    if (s.currentTrackId === id) {
+      // the playing track was deleted — stop (its file may be gone).
+      audioEngine.pause();
+      set({
+        queue: newQueue,
+        currentTrackId: null,
+        currentIndex: -1,
+        isPlaying: false,
+        status: "idle",
+        duration: 0,
+      });
+    } else if (s.currentTrackId != null) {
+      set({ queue: newQueue, currentIndex: newQueue.indexOf(s.currentTrackId) });
+    } else {
+      set({ queue: newQueue });
+    }
   },
 
   hydrate: ({ queue, currentIndex, shuffle, repeat, volume, currentTrackId, positionMs }) => {

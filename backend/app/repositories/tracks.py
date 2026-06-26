@@ -147,3 +147,22 @@ def save_download_result(session: Session, result: DownloadResult) -> Track | No
     session.commit()
     session.refresh(track)
     return track
+
+
+def delete_track(session: Session, track_id: int, delete_file: bool = False) -> bool:
+    """Remove a track from the library; optionally delete its audio file from disk.
+
+    The track's playlist_tracks / favorites / queue / play_history rows cascade
+    (DESIGN §6). Returns False only if the track does not exist.
+    """
+    track = session.get(Track, track_id)
+    if track is None:
+        return False
+    if delete_file and track.file_path:
+        try:
+            os.remove(track.file_path)
+        except OSError:
+            pass  # file already gone / locked — still drop the library entry
+    session.delete(track)
+    session.commit()
+    return True

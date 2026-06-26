@@ -1,12 +1,13 @@
-import { Link, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { formatDuration } from "../../lib/format";
 import { HeartButton } from "../../components/HeartButton";
-import { AddToPlaylistMenu } from "../playlists/AddToPlaylistMenu";
+import { TrackOverflowMenu } from "./TrackOverflowMenu";
 import { usePlayerStore } from "../player/store";
 import { useTrack } from "./queries";
 
 export function TrackDetailView() {
   const { id } = useParams();
+  const navigate = useNavigate();
   const trackId = Number(id);
   const { data, isLoading, isError, error } = useTrack(trackId);
 
@@ -36,7 +37,7 @@ export function TrackDetailView() {
           ▶ Play
         </button>
         <HeartButton trackId={data.id} isFavorite={data.is_favorite} />
-        <AddToPlaylistMenu trackId={data.id} />
+        <TrackOverflowMenu trackId={data.id} title={data.title} onDeleted={() => navigate("/")} />
       </div>
       {data.lyrics ? (
         <pre className="lyrics">{data.lyrics}</pre>

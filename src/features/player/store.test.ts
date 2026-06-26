@@ -102,4 +102,23 @@ describe("player store", () => {
     expect(s.shuffle).toBe(false);
     expect(s.queue).toEqual([10, 20, 30]); // restored
   });
+
+  it("handleTrackDeleted stops playback when the current track is deleted", () => {
+    usePlayerStore.getState().playNow([10, 20, 30], 1); // current = 20
+    usePlayerStore.getState().handleTrackDeleted(20);
+    const s = usePlayerStore.getState();
+    expect(s.currentTrackId).toBe(null);
+    expect(s.isPlaying).toBe(false);
+    expect(s.queue).toEqual([10, 30]);
+    expect(audioEngine.pause).toHaveBeenCalled();
+  });
+
+  it("handleTrackDeleted keeps a different track playing and fixes the index", () => {
+    usePlayerStore.getState().playNow([10, 20, 30], 2); // current = 30 at index 2
+    usePlayerStore.getState().handleTrackDeleted(10); // remove a track before current
+    const s = usePlayerStore.getState();
+    expect(s.currentTrackId).toBe(30);
+    expect(s.queue).toEqual([20, 30]);
+    expect(s.currentIndex).toBe(1); // 30 is now at index 1
+  });
 });

@@ -22,11 +22,25 @@ backend/vendor/ffprobe.exe
 /app.exe
 /uninstall.exe
 /cratedig-sidecar/
+# never commit any Windows executable (sidecar / installer / vendored ffmpeg / etc.)
+*.exe
 
-# ── App data / build artifacts ──
+# ── Audio: NEVER commit real music. The tiny ~4KB test fixture is the only exception. ──
+*.mp3
+*.m4a
+*.opus
+*.flac
+*.wav
+!backend/tests/fixtures/silence.mp3
+
+# ── SQLite databases ──
 *.db
+*.db-wal
+*.db-shm
 *.db-journal
 *.sqlite
+
+# ── Build artifacts ──
 build/
 
 # ── Env / editor / OS ──

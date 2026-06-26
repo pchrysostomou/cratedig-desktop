@@ -23,13 +23,13 @@ Requires **Python 3.10+** and **Node 18+**.
 
 ```powershell
 cd backend
-python -m venv .venv
-.venv\Scripts\Activate.ps1            # PowerShell  (cmd: .venv\Scripts\activate.bat)
-pip install -e ".[dev]"               # FastAPI + SQLModel + the cratedig engine (from GitHub)
-uvicorn app.main:app --port 8008 --reload
-# → GET http://127.0.0.1:8008/health  →  {"status":"ok","version":"0.1.0"}
-pytest                                 # run the backend tests
+pip install -e ".[dev]"          # FastAPI + SQLModel + the cratedig engine (from GitHub)
+uvicorn app.main:app --port 8008 # → http://127.0.0.1:8008/health
+pytest                           # run the backend tests
 ```
+
+> Prefer an isolated environment? Optionally create one first — `python -m venv .venv` then
+> activate it — before `pip install`. Not required.
 
 > FFmpeg is required by the `cratedig` engine for downloads (not yet exercised in Phase 0). The app
 > uses a **system FFmpeg if present** and falls back to a bundled copy in packaged builds

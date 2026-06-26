@@ -1,21 +1,35 @@
 import { create } from "zustand";
 import { postHistory, streamUrl } from "../../api/client";
 import { audioEngine } from "../../audio/engine";
+import type { RepeatMode } from "../../types";
 
 export type PlayerStatus = "idle" | "loading" | "playing" | "paused" | "ended" | "error";
 
-export interface PlayerStore {
-  // queue (in-memory this phase; DB-persisted queue + shuffle/repeat are Phase 5)
+export interface HydratePayload {
   queue: number[];
   currentIndex: number;
+  shuffle: boolean;
+  repeat: RepeatMode;
+  volume: number; // 0..1
+  currentTrackId: number | null;
+  positionMs: number;
+}
+
+export interface PlayerStore {
+  // queue
+  queue: number[];
+  currentIndex: number;
+  originalOrder: number[]; // pre-shuffle order, to restore when shuffle turns off
+  shuffle: boolean;
+  repeat: RepeatMode;
   // player
   currentTrackId: number | null;
   isPlaying: boolean;
   volume: number; // 0..1
   muted: boolean;
-  duration: number; // seconds (from loadedmetadata)
+  duration: number; // seconds
   status: PlayerStatus;
-  // intent actions (UI calls these; they drive the engine + state)
+  // intent actions
   playNow: (ids: number[], index: number) => void;
   togglePlay: () => void;
   next: () => void;
@@ -23,18 +37,26 @@ export interface PlayerStore {
   seek: (seconds: number) => void;
   setVolume: (v: number) => void;
   toggleMute: () => void;
-  // engine-fact setters (useAudioEngine calls these from element events)
+  toggleShuffle: () => void;
+  cycleRepeat: () => void;
+  hydrate: (payload: HydratePayload) => void;
+  // engine-fact setters
   _setPlaying: (playing: boolean) => void;
   _setDuration: (duration: number) => void;
   _setStatus: (status: PlayerStatus) => void;
   _onEnded: () => void;
 }
 
-// NOTE: currentTime is deliberately NOT in the store — it would re-render on every
-// timeupdate tick. The ProgressBar reads it straight off audioEngine.el (DESIGN §7.3).
+const REPEAT_CYCLE: RepeatMode[] = ["off", "all", "one"];
+
+// currentTime is deliberately NOT in the store (would re-render every tick). The
+// ProgressBar reads it straight off audioEngine.el (DESIGN §7.3).
 export const usePlayerStore = create<PlayerStore>((set, get) => ({
   queue: [],
   currentIndex: -1,
+  originalOrder: [],
+  shuffle: false,
+  repeat: "off",
   currentTrackId: null,
   isPlaying: false,
   volume: 1,
@@ -57,13 +79,16 @@ export const usePlayerStore = create<PlayerStore>((set, get) => ({
     if (currentTrackId == null) return;
     if (isPlaying) audioEngine.pause();
     else audioEngine.play();
-    // isPlaying is synced by the element's play/pause events via _setPlaying.
   },
 
   next: () => {
-    const { queue, currentIndex } = get();
+    const { queue, currentIndex, repeat } = get();
     const nextIndex = currentIndex + 1;
     if (nextIndex >= queue.length) {
+      if (repeat === "all" && queue.length > 0) {
+        get().playNow(queue, 0);
+        return;
+      }
       audioEngine.pause();
       set({ isPlaying: false, status: "ended" });
       return;
@@ -73,7 +98,6 @@ export const usePlayerStore = create<PlayerStore>((set, get) => ({
 
   prev: () => {
     const { queue, currentIndex } = get();
-    // Spotify behavior: restart if >3s in (or at the first track); else go back.
     if (audioEngine.el.currentTime > 3 || currentIndex <= 0) {
       audioEngine.seek(0);
       return;
@@ -99,6 +123,53 @@ export const usePlayerStore = create<PlayerStore>((set, get) => ({
     set({ muted });
   },
 
+  toggleShuffle: () => {
+    const { shuffle, queue, currentIndex, currentTrackId, originalOrder } = get();
+    if (!shuffle) {
+      const original = [...queue];
+      const rest = queue.filter((_, i) => i !== currentIndex);
+      for (let i = rest.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [rest[i], rest[j]] = [rest[j], rest[i]];
+      }
+      const shuffled = currentTrackId != null ? [currentTrackId, ...rest] : rest;
+      set({
+        shuffle: true,
+        originalOrder: original,
+        queue: shuffled,
+        currentIndex: currentTrackId != null ? 0 : currentIndex,
+      });
+    } else {
+      const restored = originalOrder.length ? originalOrder : queue;
+      const idx = currentTrackId != null ? restored.indexOf(currentTrackId) : currentIndex;
+      set({ shuffle: false, queue: restored, currentIndex: idx >= 0 ? idx : 0, originalOrder: [] });
+    }
+  },
+
+  cycleRepeat: () => {
+    const current = get().repeat;
+    const next = REPEAT_CYCLE[(REPEAT_CYCLE.indexOf(current) + 1) % REPEAT_CYCLE.length];
+    set({ repeat: next });
+  },
+
+  hydrate: ({ queue, currentIndex, shuffle, repeat, volume, currentTrackId, positionMs }) => {
+    audioEngine.setVolume(volume);
+    set({
+      queue,
+      currentIndex,
+      shuffle,
+      repeat,
+      volume,
+      currentTrackId,
+      status: currentTrackId != null ? "paused" : "idle",
+      isPlaying: false,
+    });
+    if (currentTrackId != null) {
+      audioEngine.load(streamUrl(currentTrackId), false); // cued, PAUSED (autoplay policy)
+      if (positionMs > 0) audioEngine.seek(positionMs / 1000); // applied on loadedmetadata
+    }
+  },
+
   _setPlaying: (playing) =>
     set((s) => ({
       isPlaying: playing,
@@ -106,5 +177,12 @@ export const usePlayerStore = create<PlayerStore>((set, get) => ({
     })),
   _setDuration: (duration) => set({ duration }),
   _setStatus: (status) => set({ status }),
-  _onEnded: () => get().next(),
+  _onEnded: () => {
+    if (get().repeat === "one") {
+      audioEngine.seek(0);
+      audioEngine.play();
+      return;
+    }
+    get().next();
+  },
 }));

@@ -40,3 +40,32 @@ export interface Job {
   created_at: number;
   finished_at: number | null;
 }
+
+export interface Playlist {
+  id: number;
+  name: string;
+  description: string | null;
+  created_at: number;
+  updated_at: number;
+  track_count: number;
+}
+
+export interface PlaylistDetail extends Playlist {
+  tracks: Track[];
+}
+
+export type RepeatMode = "off" | "all" | "one";
+
+export interface PlayerStateDTO {
+  current_index: number;
+  is_playing: boolean;
+  repeat_mode: RepeatMode;
+  shuffle: boolean;
+  volume: number; // 0-100
+  position_ms: number;
+}
+
+export interface QueueDTO {
+  items: Track[];
+  current_index: number;
+}

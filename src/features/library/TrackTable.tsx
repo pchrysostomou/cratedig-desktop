@@ -16,6 +16,7 @@ export function TrackTable({ tracks }: { tracks: Track[] }) {
         <span className="cell">Artist</span>
         <span className="cell">Album</span>
         <span className="cell num">Duration</span>
+        <span className="cell" />
       </div>
       <Virtuoso
         className="track-scroll"

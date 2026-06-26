@@ -15,7 +15,16 @@ from fastapi.middleware.cors import CORSMiddleware
 from app import __version__
 from app.db import init_db
 from app.jobs import JobManager
-from app.routers import download, health, history, library, stream
+from app.routers import (
+    download,
+    favorites,
+    health,
+    history,
+    library,
+    playback,
+    playlists,
+    stream,
+)
 
 
 @asynccontextmanager
@@ -50,3 +59,6 @@ app.include_router(library.router)
 app.include_router(download.router)
 app.include_router(stream.router)
 app.include_router(history.router)
+app.include_router(playlists.router)
+app.include_router(favorites.router)
+app.include_router(playback.router)

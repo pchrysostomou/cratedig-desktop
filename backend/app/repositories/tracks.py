@@ -15,7 +15,7 @@ from sqlmodel import Session, select
 
 from app.audio_meta import read_duration_ms
 from app.models import Favorite, PlaylistTrack, Track
-from app.schemas import SortField, SortOrder
+from app.schemas import SortField, SortOrder, TrackRead
 
 _SORT_COLUMNS = {
     SortField.added_at: Track.added_at,
@@ -78,6 +78,17 @@ def playlist_ids_for(session: Session, track_id: int) -> list[int]:
     """Playlists a track belongs to (empty until Phase 5 populates it)."""
     stmt = select(PlaylistTrack.playlist_id).where(PlaylistTrack.track_id == track_id)
     return list(session.exec(stmt).all())
+
+
+def to_read(track: Track, is_favorite: bool) -> TrackRead:
+    # model_dump() carries extra columns (file_path, lyrics, ...); TrackRead ignores them.
+    return TrackRead(**track.model_dump(), is_favorite=is_favorite)
+
+
+def to_reads(session: Session, tracks: Sequence[Track]) -> list[TrackRead]:
+    """Enrich a list of tracks with is_favorite in a single favorites query."""
+    favorites = favorite_ids(session, [t.id for t in tracks])
+    return [to_read(t, t.id in favorites) for t in tracks]
 
 
 def get_by_file_path(session: Session, file_path: str) -> Track | None:

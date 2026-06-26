@@ -42,7 +42,11 @@ const TRACKS = [
 ];
 
 function fetchReturning(tracks: Track[]) {
-  return vi.fn(async () => ({ ok: true, json: async () => tracks })) as unknown as typeof fetch;
+  return vi.fn(async () => ({
+    ok: true,
+    status: 200,
+    text: async () => JSON.stringify(tracks),
+  })) as unknown as typeof fetch;
 }
 
 beforeEach(() => {

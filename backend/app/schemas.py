@@ -86,3 +86,65 @@ class HistoryRead(BaseModel):
     track_id: int
     played_at: int
     ms_played: int | None = None
+
+
+# ── Playlists ──
+class PlaylistCreate(BaseModel):
+    name: str
+    description: str | None = None
+
+
+class PlaylistUpdate(BaseModel):
+    name: str | None = None
+    description: str | None = None
+
+
+class PlaylistRead(BaseModel):
+    id: int
+    name: str
+    description: str | None
+    created_at: int
+    updated_at: int
+    track_count: int = 0
+
+
+class PlaylistDetail(PlaylistRead):
+    tracks: list[TrackRead] = []
+
+
+class PlaylistAddTrack(BaseModel):
+    track_id: int
+    position: int | None = None
+
+
+class ReorderRequest(BaseModel):
+    ordered_track_ids: list[int]
+
+
+# ── Queue + player state ──
+class QueueReplace(BaseModel):
+    track_ids: list[int]
+    current_index: int | None = None
+
+
+class QueueRead(BaseModel):
+    items: list[TrackRead] = []
+    current_index: int
+
+
+class PlayerStateRead(BaseModel):
+    current_index: int
+    is_playing: bool
+    repeat_mode: str  # off | all | one
+    shuffle: bool
+    volume: int  # 0-100
+    position_ms: int
+
+
+class PlayerStateUpdate(BaseModel):
+    current_index: int | None = None
+    is_playing: bool | None = None
+    repeat_mode: str | None = None
+    shuffle: bool | None = None
+    volume: int | None = None
+    position_ms: int | None = None

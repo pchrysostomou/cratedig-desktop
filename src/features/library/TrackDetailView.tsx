@@ -1,5 +1,8 @@
 import { Link, useParams } from "react-router-dom";
 import { formatDuration } from "../../lib/format";
+import { HeartButton } from "../../components/HeartButton";
+import { AddToPlaylistMenu } from "../playlists/AddToPlaylistMenu";
+import { usePlayerStore } from "../player/store";
 import { useTrack } from "./queries";
 
 export function TrackDetailView() {
@@ -24,6 +27,17 @@ export function TrackDetailView() {
         {data.artists.join(", ")} · {data.album ?? "—"} · {formatDuration(data.duration_ms)}
         {data.release_year ? ` · ${data.release_year}` : ""}
       </p>
+      <div className="detail-actions">
+        <button
+          type="button"
+          className="add-button"
+          onClick={() => usePlayerStore.getState().playNow([data.id], 0)}
+        >
+          ▶ Play
+        </button>
+        <HeartButton trackId={data.id} isFavorite={data.is_favorite} />
+        <AddToPlaylistMenu trackId={data.id} />
+      </div>
       {data.lyrics ? (
         <pre className="lyrics">{data.lyrics}</pre>
       ) : (

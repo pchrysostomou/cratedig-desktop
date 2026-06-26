@@ -12,16 +12,10 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlmodel import Session
 
 from app.db import get_session
-from app.models import Track
 from app.repositories import tracks as repo
 from app.schemas import SortField, SortOrder, TrackDetail, TrackRead
 
 router = APIRouter()
-
-
-def _to_read(track: Track, is_favorite: bool) -> TrackRead:
-    # model_dump() carries extra columns (file_path, lyrics, ...); TrackRead ignores them.
-    return TrackRead(**track.model_dump(), is_favorite=is_favorite)
 
 
 @router.get("/library", response_model=list[TrackRead])
@@ -34,8 +28,7 @@ def get_library(
     offset: Annotated[int, Query(ge=0)] = 0,
 ) -> list[TrackRead]:
     rows = repo.list_tracks(session, q=q, sort=sort, order=order, limit=limit, offset=offset)
-    favorites = repo.favorite_ids(session, [t.id for t in rows])
-    return [_to_read(t, t.id in favorites) for t in rows]
+    return repo.to_reads(session, rows)
 
 
 @router.get("/tracks/{track_id}", response_model=TrackDetail)

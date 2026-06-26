@@ -24,6 +24,7 @@ dev = [
     "pytest",
     "httpx", # transport for FastAPI's TestClient
     "ruff",
+    "pyinstaller", # freezes the backend into the Tauri sidecar (DESIGN §8.2)
 ]
 
 [tool.setuptools.packages.find]
